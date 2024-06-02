@@ -1,0 +1,49 @@
+{
+  "Files": [
+    {
+      "Id": "C:\\Users\\Dell\\Desktop\\BlazorApp\\obj\\Debug\\net8.0\\scopedcss\\projectbundle\\BlazorApp.bundle.scp.css",
+      "PackagePath": "staticwebassets\\BlazorApp.bundle.scp.css"
+    },
+    {
+      "Id": "C:\\Users\\Dell\\Desktop\\BlazorApp\\wwwroot\\app.css",
+      "PackagePath": "staticwebassets\\app.css"
+    },
+    {
+      "Id": "C:\\Users\\Dell\\Desktop\\BlazorApp\\wwwroot\\css\\tailwind.css",
+      "PackagePath": "staticwebassets\\css\\tailwind.css"
+    },
+    {
+      "Id": "C:\\Users\\Dell\\Desktop\\BlazorApp\\wwwroot\\favicon.png",
+      "PackagePath": "staticwebassets\\favicon.png"
+    },
+    {
+      "Id": "C:\\Users\\Dell\\Desktop\\BlazorApp\\wwwroot\\js\\localStorageHelper.js",
+      "PackagePath": "staticwebassets\\js\\localStorageHelper.js"
+    },
+    {
+      "Id": "C:\\Users\\Dell\\Desktop\\BlazorApp\\wwwroot\\js\\scrollToBottom.js",
+      "PackagePath": "staticwebassets\\js\\scrollToBottom.js"
+    },
+    {
+      "Id": "C:\\Users\\Dell\\Desktop\\BlazorApp\\wwwroot\\output.css",
+      "PackagePath": "staticwebassets\\output.css"
+    },
+    {
+      "Id": "obj\\Debug\\net8.0\\staticwebassets\\msbuild.BlazorApp.Microsoft.AspNetCore.StaticWebAssets.props",
+      "PackagePath": "build\\Microsoft.AspNetCore.StaticWebAssets.props"
+    },
+    {
+      "Id": "obj\\Debug\\net8.0\\staticwebassets\\msbuild.build.BlazorApp.props",
+      "PackagePath": "build\\BlazorApp.props"
+    },
+    {
+      "Id": "obj\\Debug\\net8.0\\staticwebassets\\msbuild.buildMultiTargeting.BlazorApp.props",
+      "PackagePath": "buildMultiTargeting\\BlazorApp.props"
+    },
+    {
+      "Id": "obj\\Debug\\net8.0\\staticwebassets\\msbuild.buildTransitive.BlazorApp.props",
+      "PackagePath": "buildTransitive\\BlazorApp.props"
+    }
+  ],
+  "ElementsToRemove": []
+}

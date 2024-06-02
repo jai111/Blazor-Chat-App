@@ -1,0 +1,52 @@
+﻿@rendermode InteractiveServer   
+@using BlazorApp.Data
+@inject IJSRuntime JSRuntime
+@inject NavigationManager NavigationManager
+@using System.Text.Json
+
+
+<aside class="h-screen transition-all @(ExpandContext.Expanded ? "w-80" : "w-80")">
+    <nav class="h-full flex flex-col bg-white border-r shadow-sm dark:bg-gray-900 dark:border-gray-800">
+        <div @onclick="Calculate" class="m-4 pb-2 flex justify-center items-center dark:hover:bg-gray-800 hover:bg-gray-50 text-gray-600 py-2 px-3 my-1 rounded-md cursor-pointer pt-3">
+            <div class="overflow-hidden transition-all text-2xl font-semibold dark:text-white text-gray-600 @(ExpandContext.Expanded ? "w-32" : "w-0")">
+                New Chat
+            </div>
+            <button class="p-1.5 rounded-lg bg-gray-50 hover:bg-gray-100">
+                <i class="bi bi-plus"></i> <!-- Placeholder for Plus icon -->
+            </button>
+        </div>
+
+        <CascadingValue Value="ExpandContext">
+            <ul class="flex-1 px-3 p-10 overflow-y-auto">
+                @ChildContent
+            </ul>
+        </CascadingValue>
+
+        <div class="border-t flex p-3 w-full dark:border-gray-800">
+            <img src="https://png.pngtree.com/png-clipart/20200224/original/pngtree-cartoon-color-simple-male-avatar-png-image_5230557.jpg" alt="" class="w-10 h-10 rounded-full" />
+            <div class="flex justify-between items-center overflow-hidden transition-all @(ExpandContext.Expanded ? "w-52 ml-3" : "w-0")">
+                <div class="leading-4 dark:text-white flex justify-between w-full items-center">
+                    <h4 class="font-semibold">Test User</h4>
+                    <i class="bi bi-box-arrow-right"></i> <!-- Placeholder for LogOut icon -->
+                </div>
+            </div>
+        </div>
+    </nav>
+</aside>
+
+@code {
+    [CascadingParameter]
+    public ExpandContext ExpandContext { get; set; }
+
+    [Parameter]
+    public RenderFragment ChildContent { get; set; }
+
+    private async Task Calculate()
+    {   
+        Console.WriteLine("clicked");
+        var json = await JSRuntime.InvokeAsync<string>("localStorageHelper.getItem", "chats");
+        var chats = string.IsNullOrEmpty(json) ? new List<Chat>() : JsonSerializer.Deserialize<List<Chat>>(json);
+        var total = chats.Count;
+        NavigationManager.NavigateTo($"/{total + 1}");
+    }
+}

@@ -1,0 +1,40 @@
+
+@if (type == "user")
+{
+    <div class="flex justify-start">
+        <div class="w-14 mr-5">
+            <img class="rounded-full w-full mr-2 md:mt-4 sm:mt-4" loading="lazy" src="@Img" />
+        </div>
+        <div class="flex flex-col space-y-5 text-left pt-1">
+            <div>
+                <span class="bg-gray-100 text-gray-900 p-5 text-base rounded-r-lg rounded-b-lg flex max-w-xl dark:text-white dark:bg-gray-800">
+                    @value
+                </span>
+            </div>
+        </div>
+    </div>
+}
+else
+{
+    <div class="flex justify-end">
+        <div class="w-14 mr-5">
+            <img class="rounded-full w-full mr-2 md:mt-4 sm:mt-4" loading="lazy" src="@Img" />
+        </div>
+        <div class="space-y-5 text-left">
+            <div class="bg-indigo-800 text-white p-5 text-base rounded-l-lg rounded-b-lg inline-block max-w-xl">
+                @value
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter]
+    public string Img { get; set; }
+
+    [Parameter]
+    public string type { get; set; }
+
+    [Parameter]
+    public string value { get; set; }
+}

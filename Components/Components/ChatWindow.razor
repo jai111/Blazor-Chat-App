@@ -1,0 +1,243 @@
+@page "/{id:int}"
+@inject IJSRuntime JSRuntime
+@inject NavigationManager NavigationManager
+
+@using System.Text.Json
+@using Microsoft.AspNetCore.Components
+@using BlazorApp.Data
+@using System.Net.Http.Json
+@using System.Threading.Tasks;
+@inject AzureOpenAIService OpenAIService
+@using Azure;
+@using Azure.AI.OpenAI;
+
+<section class="relative h-full bg-white w-full flex flex-col dark:bg-gray-900 lg:flex max-h-[89%]">
+    <div id="allmessages" class="flex-1 overflow-y-auto p-5 scrollbar-thumb-color dark:scrollbar-thumb-color-dark scrollbar-width space-y-5">
+        @if (Messages != null && Messages.Any())
+        {
+            @foreach (var message in Messages)
+            {
+                <Message img="@GetAvatar(message.Type)" value="@message.Value" type="@message.Type" />
+            }
+        }
+        else
+        {
+            <div class="flex justify-center h-full w-full items-center">
+                <div class="w-[50%]">
+                    <img class="rounded-full w-[200px] ml-auto mr-auto" loading="lazy" src="https://media.istockphoto.com/id/1250000899/vector/chat-bot-robot-avatar-in-circle-round-shape-isolated-on-white-background-stock-vector.jpg?s=612x612&w=0&k=20&c=xj8GkmfFYH_Frho_pJ0HL2dkDwbZAI0Of6KwKdVsh1s=" />
+                    <div class="text-2xl font-semibold dark:text-white text-gray-600 text-center">How can I help you today?</div>
+                </div>
+            </div>
+        }
+        <div>
+            @if (Loading)
+            {
+                <div role="status" class="flex justify-center">
+                    <Spinner />
+                </div>
+            }
+        </div>
+        <div @ref="chatRef" class="h-9"></div>
+    </div>
+
+    <div class="flex justify-center p-5">
+        <div class="w-full">
+            <div class="relative flex">
+                <span class="absolute inset-y-0 flex-items-center">
+                    <button 
+                        type="button" 
+                        @onclick="OpenModal" 
+                        class="inline-flex items-center justify-center rounded-full h-12 w-12 transition duration-500 ease-in-out text-gray-500 hover:bg-gray-300 focus-outline-none">
+                        <Mic />
+                    </button>
+                </span>
+                <form @onsubmit="OnChatSubmit" class="w-full flex">
+                    <input 
+                        placeholder="Type here..." 
+                        @oninput="OnInputChange" 
+                        value="@Value" 
+                        class="w-full focus:outline-none focus:placeholder-gray-400 text-gray-600 placeholder-gray-400 pl-12 bg-gray-100 dark:bg-gray-800 dark:text-white rounded-full py-3 pr-5 md:text-lg"
+                    />
+                    <div class="ml-5">
+                        <button type="submit" class="inline-flex items-center justify-center rounded-full h-12 w-12 transition duration-500 ease-in-out text-white bg-indigo-500 hover:bg-indigo-600 focus:outline-none">
+                            <Send />
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</section>
+
+@code {
+    [Parameter]
+    public int Id { get; set; }
+    
+    [CascadingParameter]
+    public UpdateContext? UpdateContext {get; set;}
+
+    private string Value { get; set; } = string.Empty;
+    private List<Chat> Messages { get; set; } = new List<Chat>();
+    private bool Loading { get; set; }
+    private ElementReference chatRef;
+    private bool preRendered = false;
+    private bool ModalIsOpen { get; set; }
+    private string Transcript { get; set; }
+    private bool Listening { get; set; }
+    private Timer TimeoutId;
+
+    private async Task ScrollToBottom()
+    {
+        await JSRuntime.InvokeVoidAsync("scrollToBottom", chatRef);
+    }
+
+    private static readonly Dictionary<string, object> CustomStyles = new Dictionary<string, object>
+    {
+        { "content", new { top = "50%", left = "50%", right = "auto", bottom = "auto", marginRight = "-50%", transform = "translate(-50%, -50%)", width = "400px" } }
+    };
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await LoadMessages();
+            await ScrollToBottom();
+        }
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (preRendered)
+        {
+            await LoadMessages();
+            await ScrollToBottom();
+        }
+    }
+
+    private async Task LoadMessages()
+    {
+        string data = null;
+        try
+        {
+            data = await JSRuntime.InvokeAsync<string>("localStorage.getItem", "chats");
+        }
+        catch (JSException ex)
+        {
+            Console.WriteLine($"Error fetching data from localStorage: {ex.Message}");
+        }
+
+        if (string.IsNullOrEmpty(data))
+        {
+            Messages = new List<Chat>();
+        }
+        else
+        {
+            try
+            {
+                var allMessages = JsonSerializer.Deserialize<List<List<Chat>>>(data);
+                if (allMessages != null && allMessages.Count >= Id)
+                {
+                    Messages = allMessages[Id - 1];
+                }
+                else
+                {
+                    Messages = new List<Chat>();
+                }
+            }
+            catch (JsonException ex)
+            {
+                Console.WriteLine($"Error deserializing JSON data: {ex.Message}");
+                Messages = new List<Chat>();
+            }
+        }
+        preRendered = true;
+        StateHasChanged();
+    }
+
+    private string GetAvatar(string type) => type == "user"
+        ? "https://png.pngtree.com/png-clipart/20200224/original/pngtree-cartoon-color-simple-male-avatar-png-image_5230557.jpg"
+        : "https://media.istockphoto.com/id/1250000899/vector/chat-bot-robot-avatar-in-circle-round-shape-isolated-on-white-background-stock-vector.jpg?s=612x612&w=0&k=20&c=xj8GkmfFYH_Frho_pJ0HL2dkDwbZAI0Of6KwKdVsh1s=";
+
+    private async Task OnChatSubmit()
+    {
+        if (string.IsNullOrWhiteSpace(Value))
+        {
+            return;
+        }
+
+        var userMessage = new Chat { Value = Value, Type = "user" };
+        Messages.Add(userMessage);
+        
+        Value = string.Empty;
+        Loading = true;
+        StateHasChanged();
+        
+
+        try
+        {
+            var botResponse = await OpenAIService.GetResponseAsync(userMessage.Value);
+            
+            var botMessage = new Chat { Value = botResponse, Type = "bot" };
+            Messages.Add(botMessage);
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine("something went wrong");
+            Messages.Add(new Chat { Value = "Something went wrong", Type = "bot" });
+        }
+        finally
+        {
+            await JSRuntime.InvokeVoidAsync("scrollToBottom", chatRef);
+            var allChatString = await JSRuntime.InvokeAsync<string>("localStorage.getItem", "chats");
+            var allChat = string.IsNullOrEmpty(allChatString) ? new List<List<Chat>>() : JsonSerializer.Deserialize<List<List<Chat>>>(allChatString);
+
+            if (allChat.Count >= Id)
+            {
+                allChat[Id - 1] = Messages;
+            }
+            else
+            {
+                allChat.Add(Messages);
+            }
+
+            await JSRuntime.InvokeVoidAsync("localStorage.setItem", "chats", JsonSerializer.Serialize(allChat));
+            UpdateContext.SetUpdate(!UpdateContext.Update);
+            Loading = false;
+            StateHasChanged();
+        }
+    }
+
+    private void OnInputChange(ChangeEventArgs e)
+    {
+        Value = e.Value.ToString();
+    }
+
+    private void OpenModal()
+    {
+        ModalIsOpen = true;
+        StartSpeechRecognition();
+    }
+
+    private void CloseModal()
+    {
+        Value = Transcript;
+        ModalIsOpen = false;
+        ResetTranscript();
+        ClearTimeout(TimeoutId);
+    }
+
+    private void StartSpeechRecognition()
+    {
+        JSRuntime.InvokeVoidAsync("SpeechRecognition.startListening");
+    }
+
+    private void ResetTranscript()
+    {
+        Transcript = string.Empty;
+    }
+
+    private void ClearTimeout(Timer timeoutId)
+    {
+        timeoutId.Dispose();
+    }
+}

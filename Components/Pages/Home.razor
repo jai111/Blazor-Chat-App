@@ -1,0 +1,27 @@
+﻿@page "/"
+
+@rendermode InteractiveServer
+@inject IJSRuntime JSRuntime
+@inject NavigationManager NavigationManager
+@using System.Text.Json
+@using BlazorApp.Data
+
+
+@code {
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await Calculate();
+        }
+    }
+    private async Task Calculate()
+        {   
+            Console.WriteLine("clicked");
+            var json = await JSRuntime.InvokeAsync<string>("localStorageHelper.getItem", "chats");
+            var chats = string.IsNullOrEmpty(json) ? new List<List<Chat>>() : JsonSerializer.Deserialize<List<List<Chat>>>(json);
+            var total = chats.Count;
+            NavigationManager.NavigateTo($"/{total + 1}");
+        }
+}

@@ -1,0 +1,114 @@
+@inherits LayoutComponentBase
+
+@using BlazorApp.Data
+@using System.Text.Json
+@using Microsoft.AspNetCore.Components
+@using Microsoft.JSInterop
+
+@inject IJSRuntime JSRuntime
+@inject NavigationManager NavigationManager
+
+@if (true)
+{
+    <Sidebar ExpandContext="@ExpandContext">
+        @foreach (var word in words.AsEnumerable())
+        {
+            <SidebarItem
+                Text="@word[0].Value"
+                OnItemClick="@(() => HandleItemClick(words.IndexOf(word)+1))"
+                Active="words.IndexOf(word)+1 == active"
+                Id="words.IndexOf(word)+1"
+            />
+        }
+    </Sidebar>
+}
+else
+{
+    <p>No words found.</p>
+}
+
+@code {
+    private ExpandContext expandContext;
+
+    private List<List<Chat>> words = new List<List<Chat>>();
+    private int active = 1;
+    private bool isFirstRender = true;
+
+    [CascadingParameter]
+    public ExpandContext? ExpandContext { get; set; }
+
+    [Parameter]
+    public bool Update { get; set; }
+
+    [CascadingParameter]
+    public UpdateContext? UpdateContext {get; set;}
+
+
+    protected override void OnInitialized()
+    {
+        
+        string idString = NavigationManager.Uri.Split('/').LastOrDefault();
+        if (int.TryParse(idString, out int id))
+        {
+            active = id;
+        }
+        else
+        {
+           
+            active = 1; 
+        }
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await UpdateWords();
+            isFirstRender = false;
+        }
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (!isFirstRender)
+        {
+            await UpdateWords();
+        }
+    }
+
+    private async Task UpdateWords()
+    {
+        try
+        {
+            var json = await JSRuntime.InvokeAsync<string>("localStorage.getItem", "chats");
+            Console.WriteLine($"Fetched JSON: {json}");
+            if (!string.IsNullOrEmpty(json))
+            {
+                words = JsonSerializer.Deserialize<List<List<Chat>>>(json) ?? new List<List<Chat>>();
+            }
+            else
+            {
+                words = new List<List<Chat>>();
+            }
+        }
+        catch (JSException ex)
+        {
+            Console.WriteLine($"Error fetching data from localStorage: {ex.Message}");
+            words = new List<List<Chat>>();
+        }
+
+        StateHasChanged();
+    }
+
+    private void SetActive(int index)
+    {
+        active = index;
+        StateHasChanged();
+    }
+
+    private async Task HandleItemClick(int index)
+    {
+        SetActive(index);
+        NavigationManager.NavigateTo($"/{index}");
+    }
+}

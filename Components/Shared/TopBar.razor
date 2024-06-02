@@ -1,0 +1,56 @@
+@page "/topbar"
+@using BlazorApp.Data
+@inject IJSRuntime JSRuntime
+
+<div class="dark:bg-gray-900 bg-white border-b dark:border-gray-800 p-4 flex justify-between items-center">
+    <div class="flex items-center">
+        <button @onclick="ToggleExpanded" class="p-1.5 rounded-lg bg-gray-50 hover:bg-gray-100">
+            @if (ExpandContext.Expanded)
+            {
+                <Expanded/>
+            }
+            else
+            {
+                <Collapsed/>
+            }
+        </button>
+    </div>
+    <span class="text-2xl font-semibold dark:text-white text-gray-600">AiChat</span>
+    <div class="flex items-center">
+        <i class="bi bi-plus-lg block lg:hidden mr-4 p-1.5 rounded-lg bg-gray-50 hover:bg-gray-100 cursor-pointer"></i> <!-- Placeholder for Plus icon -->
+        @if (Mode == "dark")
+        {
+            <button class="bi bi-brightness-high text-xl cursor-pointer dark:text-white" @onclick="ToggleMode"></button> <!-- Placeholder for Sun icon -->
+        }
+        else
+        {
+            <button class="bi bi-moon text-xl cursor-pointer" @onclick="ToggleMode"></button> <!-- Placeholder for Moon icon -->
+        }
+    </div>
+</div>
+
+@code {
+    [CascadingParameter]
+    public ExpandContext ExpandContext { get; set; }
+
+    private string Mode { get; set; } = "dark";
+
+    private async Task ToggleMode()
+    {
+        if (Mode == "dark")
+        {
+            Mode = "light";
+            await JSRuntime.InvokeVoidAsync("document.body.classList.remove", "dark");
+        }
+        else
+        {
+            Mode = "dark";
+            await JSRuntime.InvokeVoidAsync("document.body.classList.add", "dark");
+        }
+    }
+
+    private void ToggleExpanded()
+    {
+        ExpandContext.SetExpanded(!ExpandContext.Expanded);
+    }
+}

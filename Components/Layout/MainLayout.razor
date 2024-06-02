@@ -1,0 +1,49 @@
+﻿@inherits LayoutComponentBase
+@using BlazorApp.Data
+
+<CascadingValue Value="@expandContext">
+    <CascadingValue Value="@updateContext">
+        <div class="bg-gray-100 dark:bg-gray-800">
+            <div class="flex flex-1 overflow-hidden h-screen max-w-screen-2xl m-auto">
+                <div class="w-full">
+                    <div class="max-h-full h-full flex flex-row">
+                        <SidebarComponent update = "@updateContext.Update" />
+                        <div class="flex flex-col w-full">
+                            <TopBar />
+                            @Body
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </CascadingValue>
+</CascadingValue>
+
+@code {
+    private ExpandContext expandContext;
+    private UpdateContext updateContext;
+
+    protected override void OnInitialized()
+    {
+        Console.WriteLine("initializing ");
+        expandContext = new ExpandContext
+        {
+            Expanded = true,
+            SetExpanded = expanded =>
+            {
+                expandContext.Expanded = expanded;
+                StateHasChanged();
+            }
+        };
+
+        updateContext = new UpdateContext
+        {
+            Update = true,
+            SetUpdate = update =>
+            {
+                updateContext.Update = update;
+                StateHasChanged();
+            }
+        };
+    }
+}
